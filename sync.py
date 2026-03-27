@@ -20,10 +20,14 @@ existing = requests.post(
     headers=notion_headers
 ).json()
 
-existing_ids = [
-    p["properties"].get("Wrike ID", {}).get("rich_text", [{}])[0].get("text", {}).get("content", "")
-    for p in existing.get("results", [])
-]
+existing_ids = []
+for p in existing.get("results", []):
+    try:
+        wrike_id = p["properties"].get("Wrike ID", {}).get("rich_text", [])
+        if wrike_id:
+            existing_ids.append(wrike_id[0]["text"]["content"])
+    except (IndexError, KeyError):
+        continue
 
 # Sync to Notion
 for task in tasks.get("data", []):
