@@ -1,0 +1,22 @@
+name: Wrike Notion Sync
+
+on:
+  schedule:
+    - cron: '0 13 * * *'   # 8am CT (UTC-5)
+    - cron: '0 17 * * *'   # 12pm CT (UTC-5)
+  workflow_dispatch:        # lets you run it manually too
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: pip install requests
+      - run: python sync.py
+        env:
+          WRIKE_TOKEN: ${{ secrets.WRIKE_TOKEN }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
