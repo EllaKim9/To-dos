@@ -11,18 +11,23 @@ today = datetime.now(timezone.utc).date()
 # Get Wrike tasks with due dates
 wrike_headers = {"Authorization": f"bearer {WRIKE_TOKEN}"}
 response = requests.get(
-    "https://www.wrike.com/api/v4/tasks?status=Active&fields=[dueDate]",
+    "https://www.wrike.com/api/v4/tasks?status=Active&fields=[dates]",
     headers=wrike_headers
 )
 tasks = response.json()
+print("Sample task data:", tasks.get("data", [])[:2])
 
 # Filter to only future due dates
 task_list = []
 for task in tasks.get("data", []):
-    due = task.get("dates", {}).get("due")
+    dates = task.get("dates", {})
+    due = dates.get("due") or dates.get("dueDate") or dates.get("end")
     if not due:
         continue
-    due_date = datetime.fromisoformat(due.replace("Z", "+00:00")).date()
+    try:
+        due_date = datetime.fromisoformat(due.replace("Z", "+00:00")).date()
+    except Exception:
+        continue
     if due_date >= today:
         task["_due_date"] = due_date
         task_list.append(task)
@@ -68,7 +73,6 @@ for task in task_list:
         "Due Date": {"date": {"start": due_str}}
     }
 
-    # If already exists by Wrike ID or name, update it
     page_id = existing_by_wrike_id.get(task["id"]) or existing_by_name.get(task["title"])
     if page_id:
         r = requests.patch(
